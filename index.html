@@ -449,12 +449,22 @@
 
                 trainingData = Papa.parse(dataText, { header: true, dynamicTyping: true }).data;
                 trainingLabels = Papa.parse(resultsText, { header: true, dynamicTyping: true }).data;
+
+                // Normalize Age_at_diagnosis in training data
+                trainingData.forEach(row => {
+                    row.Age_at_diagnosis = normalizeAge(row.Age_at_diagnosis);
+                });
             } catch (error) {
                 console.error('Error loading training data:', error);
             }
         }
 
         loadTrainingData();
+
+        function normalizeAge(age) {
+            // Normalize age to be between 0 and 1
+            return (age - 0) / (100 - 0); // Assuming age range is 0-100
+        }
 
         function showPage(pageNum) {
             document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
@@ -523,6 +533,9 @@
                 return;
             }
 
+            // Normalize Age_at_diagnosis
+            formData.Age_at_diagnosis = normalizeAge(parseFloat(formData.Age_at_diagnosis));
+
             patientData = [formData];
             currentPage++;
             showPage(currentPage);
@@ -565,15 +578,11 @@
             document.getElementById('loadingIndicator').style.display = 'block';
 
             try {
-                // Normalize Age_at_diagnosis
-                const age = parseFloat(patientData[0].Age_at_diagnosis);
-                const normalizedAge = (age - 0) / (100 - 0); // Assuming age range is 0-100
-
                 // Prepare input data for prediction
                 const inputData = {
                     ID: "0",
                     Gender: patientData[0].Gender,
-                    Age_at_diagnosis: normalizedAge,
+                    Age_at_diagnosis: patientData[0].Age_at_diagnosis, // Already normalized
                     IDH1: patientData[0].IDH1,
                     TP53: patientData[0].TP53,
                     ATRX: patientData[0].ATRX,
@@ -596,7 +605,7 @@
                     PDGFRA: patientData[0].PDGFRA
                 };
 
-                // Repeat predictions 51 times and count results
+                // Repeat predictions 21 times and count results
                 const predictionCounts = {
                     'Random Forest': { LGG: 0, GBM: 0 },
                     'Logistic Regression': { LGG: 0, GBM: 0 },
@@ -607,7 +616,7 @@
                     'Deep Learning': { LGG: 0, GBM: 0 }
                 };
 
-                for (let i = 0; i < 51; i++) {
+                for (let i = 0; i < 21; i++) {
                     const predictions = {
                         'Random Forest': predictRandomForest(inputData),
                         'Logistic Regression': predictLogisticRegression(inputData),
