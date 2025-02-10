@@ -1,0 +1,28 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processing</title>
+</head>
+<body>
+    <h1>Processing Your Image...</h1>
+    <p>Please wait while we process your image.</p>
+
+    <script>
+        // درخواست به سرور برای انجام پردازش
+        fetch('/process')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '/result'; // هدایت به صفحه نتیجه
+                } else {
+                    alert('Processing failed');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    </script>
+</body>
+</html>

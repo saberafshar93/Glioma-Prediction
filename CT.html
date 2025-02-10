@@ -24,7 +24,7 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    window.location.href = '/result';
+                    window.location.href = '/processing'; // هدایت به صفحه پردازش
                 } else {
                     alert('Upload failed');
                 }
