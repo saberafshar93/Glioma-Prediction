@@ -596,18 +596,43 @@
                     PDGFRA: patientData[0].PDGFRA
                 };
 
-                // Simulate predictions using different models
-                const predictions = {
-                    'Random Forest': predictRandomForest(inputData),
-                    'Logistic Regression': predictLogisticRegression(inputData),
-                    'Decision Tree': predictDecisionTree(inputData),
-                    'K-Nearest Neighbors': predictKNN(inputData),
-                    'Support Vector Machine': predictSVM(inputData),
-                    'Neural Network': predictNeuralNetwork(inputData),
-                    'Deep Learning': predictDeepLearning(inputData)
+                // Repeat predictions 21 times and count results
+                const predictionCounts = {
+                    'Random Forest': { LGG: 0, GBM: 0 },
+                    'Logistic Regression': { LGG: 0, GBM: 0 },
+                    'Decision Tree': { LGG: 0, GBM: 0 },
+                    'K-Nearest Neighbors': { LGG: 0, GBM: 0 },
+                    'Support Vector Machine': { LGG: 0, GBM: 0 },
+                    'Neural Network': { LGG: 0, GBM: 0 },
+                    'Deep Learning': { LGG: 0, GBM: 0 }
                 };
 
-                modelPredictions = predictions;
+                for (let i = 0; i < 21; i++) {
+                    const predictions = {
+                        'Random Forest': predictRandomForest(inputData),
+                        'Logistic Regression': predictLogisticRegression(inputData),
+                        'Decision Tree': predictDecisionTree(inputData),
+                        'K-Nearest Neighbors': predictKNN(inputData),
+                        'Support Vector Machine': predictSVM(inputData),
+                        'Neural Network': predictNeuralNetwork(inputData),
+                        'Deep Learning': predictDeepLearning(inputData)
+                    };
+
+                    // Count the predictions for each model
+                    Object.entries(predictions).forEach(([model, prediction]) => {
+                        if (prediction === 'LGG') predictionCounts[model].LGG++;
+                        else predictionCounts[model].GBM++;
+                    });
+                }
+
+                // Determine the final prediction for each model based on the majority
+                const finalPredictions = {};
+                Object.entries(predictionCounts).forEach(([model, counts]) => {
+                    finalPredictions[model] = counts.LGG > counts.GBM ? 'LGG' : 'GBM';
+                });
+
+                // Display the final predictions
+                modelPredictions = finalPredictions;
                 displayResults();
                 currentPage++;
                 showPage(currentPage);
