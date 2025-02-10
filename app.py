@@ -1,41 +1,27 @@
-﻿from flask import Flask, request, jsonify, render_template
-from ultralytics import YOLO
-import os
-import uuid
+﻿from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-# بارگذاری مدل YOLO
-model = YOLO("yolov8n-seg.pt")  # مدل YOLOv8 برای segmentation
+# تابع برای اجرای کد پایتون
+def run_python_code(code):
+    try:
+        # اجرای کد پایتون
+        exec(code)
+        return "Code executed successfully!"
+    except Exception as e:
+        return f"Error: {str(e)}"
 
-@app.route('/')
-def home():
-    return render_template('index.html')
-
-@app.route('/predict', methods=['POST'])
-def predict():
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file part'})
+# ایجاد یک API برای دریافت و اجرای کد
+@app.route('/run-code', methods=['POST'])
+def run_code():
+    data = request.json  # دریافت کد از کاربر
+    code = data.get('code')
     
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({'error': 'No selected file'})
+    # اجرای کد و دریافت نتیجه
+    result = run_python_code(code)
     
-    # ذخیره فایل موقت
-    file_path = os.path.join('static', file.filename)
-    file.save(file_path)
-    
-    # انجام پیش‌بینی با YOLO
-    results = model.predict(source=file_path, save=True, project="static", name="results")
-    
-    # پردازش نتایج
-    prediction = results[0].names[results[0].probs.top1]  # نام کلاس پیش‌بینی شده
-    image_url = f"static/results/{file.filename}"  # مسیر تصویر پردازش‌شده
-    
-    return jsonify({
-        'prediction': prediction,
-        'image_url': image_url
-    })
+    # بازگرداندن نتیجه به کاربر
+    return jsonify({'result': result})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000)
