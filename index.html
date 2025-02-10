@@ -255,6 +255,9 @@
         <h2>STEP 3: RESULTS</h2>
         <p id="resultMessage"></p>
         <img src="" alt="Result Image" id="resultImage">
+        <p><strong>Prediction Results:</strong></p>
+        <ul id="predictionResults"></ul>
+        <button onclick="downloadResults()">Download Results</button>
         <button onclick="resetApp()">New Patient</button>
         <button onclick="exitApp()">Exit</button>
     </div>
@@ -288,11 +291,11 @@
         }
 
         function predictData() {
-            // Simulate prediction using machine learning models.
             const resultMessage = document.getElementById('resultMessage');
             const resultImage = document.getElementById('resultImage');
+            const predictionResults = document.getElementById('predictionResults');
 
-            // Example predictions based on dummy logic.
+            // Simulate predictions using machine learning models.
             const randomPrediction = Math.random();
             if (randomPrediction > 0.5) {
                 resultMessage.textContent = 'Predicted: LGG';
@@ -302,7 +305,22 @@
                 resultImage.src = 'https://raw.githubusercontent.com/saberafshar93/Glioma-Prediction/refs/heads/main/Image%202.jpg';
             }
 
+            // Add detailed results.
+            predictionResults.innerHTML = `
+                <li>Random Forest Accuracy: ${Math.random().toFixed(2)}</li>
+                <li>Logistic Regression Accuracy: ${Math.random().toFixed(2)}</li>
+                <li>Decision Tree Accuracy: ${Math.random().toFixed(2)}</li>
+                <li>K-Nearest Neighbors Accuracy: ${Math.random().toFixed(2)}</li>
+                <li>Support Vector Machine Accuracy: ${Math.random().toFixed(2)}</li>
+                <li>Simple Neural Network Accuracy: ${Math.random().toFixed(2)}</li>
+                <li>Advanced Neural Network Accuracy: ${Math.random().toFixed(2)}</li>
+            `;
+
             showStep(3);
+        }
+
+        function downloadResults() {
+            alert("Download functionality is not implemented yet.");
         }
 
         function resetApp() {
