@@ -596,33 +596,19 @@
                     PDGFRA: patientData[0].PDGFRA
                 };
 
-                // Repeat predictions 20 times and count results
-                const predictionCounts = { LGG: 0, GBM: 0 };
-                for (let i = 0; i < 20; i++) {
-                    const predictions = {
-                        'Random Forest': predictRandomForest(inputData),
-                        'Logistic Regression': predictLogisticRegression(inputData),
-                        'Decision Tree': predictDecisionTree(inputData),
-                        'K-Nearest Neighbors': predictKNN(inputData),
-                        'Support Vector Machine': predictSVM(inputData),
-                        'Neural Network': predictNeuralNetwork(inputData),
-                        'Deep Learning': predictDeepLearning(inputData)
-                    };
+                // Simulate predictions using different models
+                const predictions = {
+                    'Random Forest': predictRandomForest(inputData),
+                    'Logistic Regression': predictLogisticRegression(inputData),
+                    'Decision Tree': predictDecisionTree(inputData),
+                    'K-Nearest Neighbors': predictKNN(inputData),
+                    'Support Vector Machine': predictSVM(inputData),
+                    'Neural Network': predictNeuralNetwork(inputData),
+                    'Deep Learning': predictDeepLearning(inputData)
+                };
 
-                    // Count the predictions
-                    Object.values(predictions).forEach(prediction => {
-                        if (prediction === 'LGG') predictionCounts.LGG++;
-                        else predictionCounts.GBM++;
-                    });
-                }
-
-                // Determine the final prediction based on the majority
-                const finalPrediction = predictionCounts.LGG > predictionCounts.GBM ? 'LGG' : 'GBM';
-                const confidence = (Math.max(predictionCounts.LGG, predictionCounts.GBM) / (20 * 7)) * 100;
-
-                // Display the final prediction
-                modelPredictions = { 'Final Prediction': finalPrediction };
-                displayResults(finalPrediction, confidence);
+                modelPredictions = predictions;
+                displayResults();
                 currentPage++;
                 showPage(currentPage);
             } catch (error) {
@@ -675,19 +661,52 @@
             return score > 0.5 ? 'LGG' : 'GBM';
         }
 
-        function displayResults(finalPrediction, confidence) {
+        function displayResults() {
             const resultsDiv = document.getElementById('results');
             
             let content = '<h2>Prediction Results Summary</h2>';
             
             // Add Neural Network result with accuracy
+            const neuralNetworkResult = modelPredictions['Neural Network'];
             content += `
                 <div class="consensus-result">
-                    <h3>Final Prediction:</h3>
-                    <p><strong>${finalPrediction}</strong></p>
-                    <p>Confidence: ${confidence.toFixed(1)}%</p>
+                    <h3>Neural Network (Acc=92%):</h3>
+                    <p><strong>${neuralNetworkResult}</strong></p>
                 </div>
             `;
+            
+            let lggCount = 0;
+            let gbmCount = 0;
+            Object.values(modelPredictions).forEach(prediction => {
+                if (prediction === 'LGG') lggCount++;
+                else gbmCount++;
+            });
+            
+            const totalModels = Object.keys(modelPredictions).length;
+            const consensusPercentage = Math.max(lggCount, gbmCount) / totalModels * 100;
+            const consensusPrediction = lggCount > gbmCount ? 
+                'LGG' : 
+                'GBM';
+            
+            content += `
+                <div class="consensus-result">
+                    <h3>Consensus Prediction</h3>
+                    <p><strong>${consensusPrediction}</strong></p>
+                    <p>Confidence: ${consensusPercentage.toFixed(1)}%</p>
+                </div>
+                <hr>
+                <h3>Individual Model Predictions</h3>
+            `;
+            
+            content += '<div class="model-predictions">';
+            Object.entries(modelPredictions).forEach(([model, prediction]) => {
+                content += `
+                    <div class="model-prediction">
+                        <strong>${model}:</strong> ${prediction}
+                    </div>
+                `;
+            });
+            content += '</div>';
             
             content += `
                 <hr>
