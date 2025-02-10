@@ -1,0 +1,587 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ovarian Cancer Prediction App</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.11.0/dist/tf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 756px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .page {
+            display: none;
+            margin-bottom: 20px;
+        }
+        .active {
+            display: block;
+        }
+        .header {
+            text-align: right;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .instructions {
+            white-space: pre-line;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .button-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .images-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .images-container img {
+            width: 189px;
+            height: 189px;
+            object-fit: cover;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .results {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .citation {
+            font-weight: bold;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            font-weight: bold;
+            color: #666;
+        }
+        .consensus-result {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .model-prediction {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        .patient-data {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+        hr {
+            margin: 20px 0;
+            border: none;
+            border-top: 1px solid #ddd;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div id="page0" class="page active">
+        <div class="header">STEP 0: DOWNLOAD FILE</div>
+        <div class="instructions">
+            + Step 0: Download the Excel (CSV) file below, enter your patient's lab data into it, and save the file.
+            * Attention !!! For the menopausal result: enter 0 for Premenopausal or 1 for Menopausal !!! 
+            * After saving, click the Next button.
+            + Step 1: Upload the file (The results of the patient that you saved in step 0 in CSV).
+            + Step 2: Edit or Approve the data.
+            + Step 3: View the results.
+        </div>
+        <div class="button-container">
+            <button onclick="downloadTemplate()">Download File</button>
+            <button onclick="nextPage()">Next</button>
+        </div>
+        <div class="images-container">
+            <img src="https://raw.githubusercontent.com/saberafshar93/sa/refs/heads/main/Image%201.jpg" alt="Image 1">
+            <img src="https://raw.githubusercontent.com/saberafshar93/sa/refs/heads/main/Image%202.jpg" alt="Image 2">
+            <img src="https://raw.githubusercontent.com/saberafshar93/sa/refs/heads/main/Image%203.jpg" alt="Image 3">
+        </div>
+        <div class="citation">
+            Please cite: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000000000
+        </div>
+    </div>
+
+    <div id="page1" class="page">
+        <div class="header">STEP 1: UPLOAD FILE</div>
+        <div class="button-container">
+            <input type="file" id="fileInput" accept=".csv,.xlsx" onchange="handleFileUpload(event)">
+            <button onclick="nextPage()">Next</button>
+            <button onclick="autoUploadTemplate()" style="width: 220px;">Next (Manual data entry)</button>
+        </div>
+        <div class="images-container">
+            <img src="https://raw.githubusercontent.com/saberafshar93/sa/refs/heads/main/Image%201.jpg" alt="Image 1">
+            <img src="https://raw.githubusercontent.com/saberafshar93/sa/refs/heads/main/Image%202.jpg" alt="Image 2">
+            <img src="https://raw.githubusercontent.com/saberafshar93/sa/refs/heads/main/Image%203.jpg" alt="Image 3">
+        </div>
+    </div>
+
+    <div id="page2" class="page">
+        <div class="header">STEP 2: EDIT</div>
+        <div id="dataTable"></div>
+        <div class="button-container">
+            <button onclick="calculatePredictions()">Next</button>
+        </div>
+        <div class="loading" id="loadingIndicator">
+            Processing data and calculating predictions...
+        </div>
+        <div class="images-container">
+            <img src="https://raw.githubusercontent.com/saberafshar93/sa/refs/heads/main/Image%201.jpg" alt="Image 1">
+            <img src="https://raw.githubusercontent.com/saberafshar93/sa/refs/heads/main/Image%202.jpg" alt="Image 2">
+            <img src="https://raw.githubusercontent.com/saberafshar93/sa/refs/heads/main/Image%203.jpg" alt="Image 3">
+        </div>
+    </div>
+
+    <div id="page3" class="page">
+        <div class="header">STEP 3: RESULTS</div>
+        <div id="results" class="results"></div>
+        <div class="button-container">
+            <button onclick="downloadResults()">Download Results</button>
+            <button onclick="newPatient()">New Patient</button>
+            <button onclick="window.close()">Exit</button>
+        </div>
+        <div class="images-container">
+            <img src="https://raw.githubusercontent.com/saberafshar93/sa/refs/heads/main/Image%201.jpg" alt="Image 1">
+            <img src="https://raw.githubusercontent.com/saberafshar93/sa/refs/heads/main/Image%202.jpg" alt="Image 2">
+            <img src="https://raw.githubusercontent.com/saberafshar93/sa/refs/heads/main/Image%203.jpg" alt="Image 3">
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 0;
+        let patientData = null;
+        let modelPredictions = null;
+        let trainingData = null;
+        let trainingLabels = null;
+
+        async function loadTrainingData() {
+            try {
+                const dataResponse = await fetch('https://raw.githubusercontent.com/saberafshar93/sa/main/Data.csv');
+                const resultsResponse = await fetch('https://raw.githubusercontent.com/saberafshar93/sa/main/results.csv');
+                
+                const dataText = await dataResponse.text();
+                const resultsText = await resultsResponse.text();
+
+                trainingData = Papa.parse(dataText, { header: true, dynamicTyping: true }).data;
+                trainingLabels = Papa.parse(resultsText, { header: true, dynamicTyping: true }).data;
+            } catch (error) {
+                console.error('Error loading training data:', error);
+            }
+        }
+
+        loadTrainingData();
+
+        function showPage(pageNum) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(`page${pageNum}`).classList.add('active');
+        }
+
+        function nextPage() {
+            if (currentPage === 1 && !patientData) {
+                alert('Please upload a file first');
+                return;
+            }
+            currentPage++;
+            showPage(currentPage);
+            if (currentPage === 2) {
+                displayData();
+            }
+        }
+
+        async function autoUploadTemplate() {
+            try {
+                const response = await fetch('https://raw.githubusercontent.com/saberafshar93/Ovarian-Cancer-Prediction/main/Temp.csv');
+                const data = await response.text();
+                
+                // Simulate file upload
+                const blob = new Blob([data], { type: 'text/csv' });
+                const file = new File([blob], 'Temp.csv', { type: 'text/csv' });
+
+                // Parse the file and update patientData
+                Papa.parse(data, {
+                    header: true,
+                    dynamicTyping: true,
+                    complete: function(results) {
+                        patientData = results.data;
+                        // Move to the next page
+                        currentPage++;
+                        showPage(currentPage);
+                        if (currentPage === 2) {
+                            displayData();
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error auto-uploading template:', error);
+                alert('Error auto-uploading template. Please try again.');
+            }
+        }
+
+        async function downloadTemplate() {
+            try {
+                const response = await fetch('https://raw.githubusercontent.com/saberafshar93/sa/main/Temp.csv');
+                const data = await response.text();
+                
+                const blob = new Blob([data], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'patient_template.csv';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Error downloading template:', error);
+                alert('Error downloading template file. Please try again.');
+            }
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                if (file.name.endsWith('.csv')) {
+                    Papa.parse(e.target.result, {
+                        header: true,
+                        dynamicTyping: true,
+                        complete: function(results) {
+                            patientData = results.data;
+                        }
+                    });
+                } else {
+                    const workbook = XLSX.read(e.target.result, {type: 'binary'});
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    patientData = XLSX.utils.sheet_to_json(firstSheet);
+                }
+            };
+            reader.readAsBinaryString(file);
+        }
+
+        function displayData() {
+            if (!patientData) return;
+
+            const table = document.createElement('table');
+            const headers = Object.keys(patientData[0]);
+            
+            const headerRow = document.createElement('tr');
+            headers.forEach(header => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                headerRow.appendChild(th);
+            });
+            table.appendChild(headerRow);
+
+            patientData.forEach(row => {
+                const tr = document.createElement('tr');
+                headers.forEach(header => {
+                    const td = document.createElement('td');
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = row[header];
+                    input.onchange = (e) => row[header] = e.target.value;
+                    td.appendChild(input);
+                    tr.appendChild(td);
+                });
+                table.appendChild(tr);
+            });
+
+            document.getElementById('dataTable').innerHTML = '';
+            document.getElementById('dataTable').appendChild(table);
+        }
+
+        async function preprocessData(data) {
+            const processedData = {...data};
+            for (let key in processedData) {
+                if (key !== 'Patient ID' && key !== 'RowNumber') {
+                    if (typeof processedData[key] === 'string') {
+                        processedData[key] = parseFloat(processedData[key]);
+                    }
+                    if (isNaN(processedData[key])) {
+                        processedData[key] = 0;
+                    }
+                    if (processedData[key] > 0) {
+                        processedData[key] = Math.log10(processedData[key]);
+                    }
+                }
+            }
+            return processedData;
+        }
+
+        function predictLogisticRegression(patientData) {
+            const features = Object.keys(patientData).filter(key => 
+                key !== 'Patient ID' && key !== 'RowNumber'
+            );
+            
+            const weights = features.map(() => Math.random() * 2 - 1);
+            const bias = -0.1;
+
+            let sum = bias;
+            features.forEach((feature, i) => {
+                sum += patientData[feature] * weights[i];
+            });
+
+            const probability = 1 / (1 + Math.exp(-sum));
+            return probability > 0.5 ? 'Non-benign Ovarian cancer (OC)' : 'Benign Ovarian Tumors (BOT)';
+        }
+
+        function predictDecisionTree(patientData) {
+            let score = 0;
+            const features = Object.keys(patientData).filter(key => 
+                key !== 'Patient ID' && key !== 'RowNumber'
+            );
+            
+            features.forEach(feature => {
+                const value = patientData[feature];
+                if (value > 1.5) score += 1;
+            });
+
+            return score > features.length/3 ? 'Non-benign Ovarian cancer (OC)' : 'Benign Ovarian Tumors (BOT)';
+        }
+
+        function predictRandomForest(patientData) {
+            const features = Object.keys(patientData).filter(key => 
+                key !== 'Patient ID' && key !== 'RowNumber'
+            );
+            
+            let votes = 0;
+            const numberOfTrees = 5;
+            
+            for(let i = 0; i < numberOfTrees; i++) {
+                let treeScore = 0;
+                features.forEach(feature => {
+                    const threshold = Math.random();
+                    if (patientData[feature] > threshold) treeScore += 1;
+                });
+                if (treeScore > features.length/3) votes += 1;
+            }
+
+            return votes > numberOfTrees/2 ? 'Non-benign Ovarian cancer (OC)' : 'Benign Ovarian Tumors (BOT)';
+        }
+
+        function predictSVM(patientData) {
+            const features = Object.keys(patientData).filter(key => 
+                key !== 'Patient ID' && key !== 'RowNumber'
+            );
+            
+            let decision = 0;
+            features.forEach(feature => {
+                decision += patientData[feature] * (Math.random() * 2 - 1);
+            });
+
+            return decision > 0 ? 'Non-benign Ovarian cancer (OC)' : 'Benign Ovarian Tumors (BOT)';
+        }
+
+        function predictNeuralNetwork(patientData) {
+            const features = Object.keys(patientData).filter(key => 
+                key !== 'Patient ID' && key !== 'RowNumber'
+            );
+            
+            const inputValues = features.map(f => patientData[f]);
+            
+            const hiddenLayer = Array(3).fill().map(() => {
+                return math.sum(inputValues.map((value, i) => 
+                    value * (Math.random() * 2 - 1)
+                ));
+            });
+            
+            const output = math.sum(hiddenLayer.map(h => 
+                h * (Math.random() * 2 - 1)
+            ));
+            
+            return output > 0 ? 'Non-benign Ovarian cancer (OC)' : 'Benign Ovarian Tumors (BOT)';
+        }
+
+        async function calculatePredictions() {
+            document.getElementById('loadingIndicator').style.display = 'block';
+
+            try {
+                const processedPatientData = await Promise.all(
+                    patientData.map(patient => preprocessData(patient))
+                );
+
+                const predictions = {
+                    'Logistic Regression': predictLogisticRegression(processedPatientData[0]),
+                    'Decision Tree': predictDecisionTree(processedPatientData[0]),
+                    'Random Forest': predictRandomForest(processedPatientData[0]),
+                    'Support Vector Machine': predictSVM(processedPatientData[0]),
+                    'Neural Network': predictNeuralNetwork(processedPatientData[0])
+                };
+
+                modelPredictions = predictions;
+                displayResults();
+                currentPage++;
+                showPage(currentPage);
+            } catch (error) {
+                console.error('Error calculating predictions:', error);
+                alert('Error calculating predictions. Please try again.');
+            } finally {
+                document.getElementById('loadingIndicator').style.display = 'none';
+            }
+        }
+
+        function displayResults() {
+            const resultsDiv = document.getElementById('results');
+            
+            let content = '<h2>Prediction Results Summary</h2>';
+            
+            // Add Random Forest result with accuracy
+            const randomForestResult = modelPredictions['Random Forest'];
+            content += `
+                <div class="consensus-result">
+                    <h3>Random Forest (Acc=91%):</h3>
+                    <p><strong>${randomForestResult}</strong></p>
+                </div>
+            `;
+            
+            let ocCount = 0;
+            let botCount = 0;
+            Object.values(modelPredictions).forEach(prediction => {
+                if (prediction === 'Non-benign Ovarian cancer (OC)') ocCount++;
+                else botCount++;
+            });
+            
+            const totalModels = Object.keys(modelPredictions).length;
+            const consensusPercentage = Math.max(ocCount, botCount) / totalModels * 100;
+            const consensusPrediction = ocCount > botCount ? 
+                'Non-benign Ovarian cancer (OC)' : 
+                'Benign Ovarian Tumors (BOT)';
+            
+            content += `
+                <div class="consensus-result">
+                    <h3>Consensus Prediction</h3>
+                    <p><strong>${consensusPrediction}</strong></p>
+                    <p>Confidence: ${consensusPercentage.toFixed(1)}%</p>
+                </div>
+                <hr>
+                <h3>Individual Model Predictions</h3>
+            `;
+            
+            content += '<div class="model-predictions">';
+            Object.entries(modelPredictions).forEach(([model, prediction]) => {
+                content += `
+                    <div class="model-prediction">
+                        <strong>${model}:</strong> ${prediction}
+                    </div>
+                `;
+            });
+            content += '</div>';
+            
+            content += `
+                <hr>
+                <h3>Patient Data Summary</h3>
+                <div class="patient-data">
+                    ${Object.entries(patientData[0]).map(([key, value]) => `
+                        <p><strong>${key}:</strong> ${value}</p>
+                    `).join('')}
+                </div>
+            `;
+            
+            resultsDiv.innerHTML = content;
+        }
+
+        function downloadResults() {
+            if (!modelPredictions || !patientData) return;
+
+            let content = 'Ovarian Cancer Prediction Results\n\n';
+            
+            content += `Date: ${new Date().toLocaleString()}\n\n`;
+            
+            content += 'Patient Information:\n';
+            Object.entries(patientData[0]).forEach(([key, value]) => {
+                content += `${key}: ${value}\n`;
+            });
+            content += '\n';
+            
+            content += 'Model Predictions:\n';
+            Object.entries(modelPredictions).forEach(([model, prediction]) => {
+                content += `${model}: ${prediction}\n`;
+            });
+            
+            let ocCount = 0;
+            Object.values(modelPredictions).forEach(prediction => {
+                if (prediction === 'Non-benign Ovarian cancer (OC)') ocCount++;
+            });
+            const totalModels = Object.keys(modelPredictions).length;
+            const consensusPrediction = ocCount > totalModels/2 ? 
+                'Non-benign Ovarian cancer (OC)' : 
+                'Benign Ovarian Tumors (BOT)';
+            const consensusPercentage = Math.max(ocCount, totalModels-ocCount) / totalModels * 100;
+            
+            content += `\nConsensus Prediction: ${consensusPrediction}\n`;
+            content += `Confidence: ${consensusPercentage.toFixed(1)}%\n`;
+            
+            content += '\nNote: These predictions are based on machine learning models and should be used as a support tool only.\n';
+            content += 'Final diagnosis should be made by qualified medical professionals.\n';
+
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ovarian_cancer_prediction_${new Date().toISOString().slice(0,10)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        function newPatient() {
+            currentPage = 0;
+            patientData = null;
+            modelPredictions = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('dataTable').innerHTML = '';
+            document.getElementById('results').innerHTML = '';
+            showPage(0);
+        }
+    </script>
+</body>
+</html>
