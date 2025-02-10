@@ -26,18 +26,16 @@
             formData.append('image', file);
 
             try {
-                // ارسال تصویر به سرور Flask
-                const response = await fetch('http://127.0.0.1:5000/upload', {
+                const response = await fetch('YOUR_COLAB_NGROK_URL/upload', {
                     method: 'POST',
                     body: formData
                 });
 
                 if (response.ok) {
                     const result = await response.json();
-                    // نمایش نتیجه در صفحه جدید
-                    window.location.href = result.processed_image_url;
+                    window.location.href = `result.html?imageUrl=${result.processedImageUrl}`;
                 } else {
-                    alert('Failed to upload image.');
+                    alert('Failed to process the image.');
                 }
             } catch (error) {
                 console.error('Error:', error);
