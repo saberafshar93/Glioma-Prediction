@@ -7,41 +7,32 @@
 </head>
 <body>
     <h1>Upload an Image</h1>
-    <form id="uploadForm">
-        <input type="file" id="imageInput" accept="image/*" required>
-        <button type="button" onclick="uploadImage()">Next</button>
+    <form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data">
+        <input type="file" name="image" accept="image/*" required>
+        <button type="submit">Next</button>
     </form>
 
     <script>
-        async function uploadImage() {
-            const fileInput = document.getElementById('imageInput');
-            const file = fileInput.files[0];
+        document.getElementById('uploadForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            var formData = new FormData(this);
 
-            if (!file) {
-                alert('Please select an image first.');
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('image', file);
-
-            try {
-                const response = await fetch('YOUR_COLAB_NGROK_URL/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (response.ok) {
-                    const result = await response.json();
-                    window.location.href = `result.html?imageUrl=${result.processedImageUrl}`;
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '/result';
                 } else {
-                    alert('Failed to process the image.');
+                    alert('Upload failed');
                 }
-            } catch (error) {
+            })
+            .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred while uploading the image.');
-            }
-        }
+            });
+        });
     </script>
 </body>
 </html>

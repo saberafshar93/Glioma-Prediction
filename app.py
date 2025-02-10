@@ -1,41 +1,42 @@
-﻿from flask import Flask, request, jsonify, render_template
+﻿from flask import Flask, render_template, request, redirect, url_for, send_from_directory
 import os
-import requests
 
 app = Flask(__name__)
-
-UPLOAD_FOLDER = 'uploads'
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
+app.config['UPLOAD_FOLDER'] = 'static/uploads'
 
 @app.route('/')
-def CT():
+def index():
     return render_template('CT.html')
 
 @app.route('/upload', methods=['POST'])
 def upload_image():
     if 'image' not in request.files:
-        return jsonify({'error': 'No image provided'}), 400
-
+        return {'success': False, 'message': 'No file part'}
+    
     file = request.files['image']
-    file_path = os.path.join(UPLOAD_FOLDER, file.filename)
-    file.save(file_path)
-
-    # ارسال تصویر به Google Colab
-    colab_url = "https://colab.research.google.com/drive/1PEgph989YvsOZnkLEbJwoKp-CHn9jolz"
-    with open(file_path, 'rb') as f:
-        response = requests.post(colab_url, files={'image': f})
-
-    if response.status_code == 200:
-        processed_image_url = response.json().get('processed_image_url')
-        return jsonify({'image_url': processed_image_url})
-    else:
-        return jsonify({'error': 'Failed to process image'}), 500
+    if file.filename == '':
+        return {'success': False, 'message': 'No selected file'}
+    
+    if file:
+        filename = 'uploaded_image.jpg'
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+        
+        # Here you can add your image processing logic
+        # For example, let's just copy the uploaded image as the result
+        result_filename = 'processed_image.jpg'
+        result_filepath = os.path.join(app.config['UPLOAD_FOLDER'], result_filename)
+        os.rename(filepath, result_filepath)
+        
+        return {'success': True}
 
 @app.route('/result')
-def result():
-    image_url = request.args.get('image_url')
-    return render_template('result.html', image_url=image_url)
+def show_result():
+    return render_template('result.html')
+
+@app.route('/static/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 if __name__ == '__main__':
     app.run(debug=True)
