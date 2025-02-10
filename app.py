@@ -1,27 +1,41 @@
-﻿from flask import Flask, request, jsonify
+﻿from flask import Flask, request, jsonify, render_template
+import os
+import requests
 
 app = Flask(__name__)
 
-# تابع برای اجرای کد پایتون
-def run_python_code(code):
-    try:
-        # اجرای کد پایتون
-        exec(code)
-        return "Code executed successfully!"
-    except Exception as e:
-        return f"Error: {str(e)}"
+UPLOAD_FOLDER = 'uploads'
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
-# ایجاد یک API برای دریافت و اجرای کد
-@app.route('/run-code', methods=['POST'])
-def run_code():
-    data = request.json  # دریافت کد از کاربر
-    code = data.get('code')
-    
-    # اجرای کد و دریافت نتیجه
-    result = run_python_code(code)
-    
-    # بازگرداندن نتیجه به کاربر
-    return jsonify({'result': result})
+@app.route('/')
+def CT():
+    return render_template('CT.html')
+
+@app.route('/upload', methods=['POST'])
+def upload_image():
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image provided'}), 400
+
+    file = request.files['image']
+    file_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    file.save(file_path)
+
+    # ارسال تصویر به Google Colab
+    colab_url = "https://colab.research.google.com/drive/1PEgph989YvsOZnkLEbJwoKp-CHn9jolz"
+    with open(file_path, 'rb') as f:
+        response = requests.post(colab_url, files={'image': f})
+
+    if response.status_code == 200:
+        processed_image_url = response.json().get('processed_image_url')
+        return jsonify({'image_url': processed_image_url})
+    else:
+        return jsonify({'error': 'Failed to process image'}), 500
+
+@app.route('/result')
+def result():
+    image_url = request.args.get('image_url')
+    return render_template('result.html', image_url=image_url)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(debug=True)
