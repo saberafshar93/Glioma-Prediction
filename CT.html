@@ -4,85 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MRI Tumor Detection</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        h1 {
-            color: #333;
-        }
-        #preview {
-            max-width: 100%;
-            margin-top: 20px;
-        }
-        #result {
-            margin-top: 20px;
-            font-weight: bold;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <h1>MRI Tumor Detection</h1>
-    <p>Upload an MRI image to detect the type of tumor.</p>
+    <p>Upload an MRI image to detect and segment the tumor.</p>
     
-    <!-- ورودی فایل -->
-    <input type="file" id="fileInput" accept="image/*">
+    <!-- فرم آپلود تصویر -->
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" id="fileInput" name="file" accept="image/*" required>
+        <button type="submit">Upload and Predict</button>
+    </form>
     
     <!-- نمایش تصویر آپلود شده -->
-    <div>
+    <div id="imageContainer">
         <img id="preview" src="#" alt="Image Preview" style="display:none;">
     </div>
     
     <!-- نمایش نتیجه -->
     <div id="result"></div>
 
-    <!-- بارگذاری TensorFlow.js -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script>
-        // بارگذاری مدل از پیش آموزش‌دیده (مثال: MobileNet)
-        async function loadModel() {
-            const model = await tf.loadLayersModel('https://tfhub.dev/google/tfjs-model/imagenet/mobilenet_v2_100_224/classification/4/default/1');
-            return model;
-        }
+        // ارسال تصویر به سرور و دریافت نتیجه
+        document.getElementById('uploadForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const formData = new FormData();
+            const fileInput = document.getElementById('fileInput');
+            formData.append('file', fileInput.files[0]);
 
-        // پیش‌بینی روی تصویر آپلود شده
-        async function predict(imageElement) {
-            const model = await loadModel();
-            const tensor = tf.browser.fromPixels(imageElement)
-                .resizeNearestNeighbor([224, 224]) // تغییر اندازه تصویر به اندازه مدل
-                .toFloat()
-                .expandDims();
+            const response = await fetch('/predict', {
+                method: 'POST',
+                body: formData
+            });
 
-            const predictions = await model.predict(tensor);
-            const result = predictions.dataSync(); // دریافت نتایج
-            return result;
-        }
+            const data = await response.json();
+            document.getElementById('result').innerText = `Prediction: ${data.prediction}`;
 
-        // نمایش تصویر آپلود شده و انجام پیش‌بینی
-        const fileInput = document.getElementById('fileInput');
-        const previewImg = document.getElementById('preview');
-        const resultDiv = document.getElementById('result');
-
-        fileInput.addEventListener('change', async function() {
-            const file = fileInput.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    previewImg.src = e.target.result;
-                    previewImg.style.display = 'block';
-
-                    // انجام پیش‌بینی پس از بارگذاری تصویر
-                    previewImg.onload = async function() {
-                        const predictions = await predict(previewImg);
-                        resultDiv.innerText = `Predictions: ${predictions}`;
-                    };
-                };
-                reader.readAsDataURL(file);
-            } else {
-                previewImg.style.display = 'none';
-                resultDiv.innerText = '';
-            }
+            // نمایش تصویر پردازش‌شده
+            const imageContainer = document.getElementById('imageContainer');
+            imageContainer.innerHTML = `<img src="${data.image_url}" alt="Processed Image">`;
         });
     </script>
 </body>
