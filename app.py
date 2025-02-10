@@ -7,7 +7,7 @@ app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['RESULT_FOLDER'] = 'static/results'
 
 @app.route('/')
-def index():
+def CT():
     return render_template('CT.html')
 
 @app.route('/upload', methods=['POST'])
