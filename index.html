@@ -605,7 +605,7 @@
                     PDGFRA: patientData[0].PDGFRA
                 };
 
-                // Repeat predictions 21 times and count results
+                // Repeat predictions 15 times and count results
                 const predictionCounts = {
                     'Random Forest': { LGG: 0, GBM: 0 },
                     'Logistic Regression': { LGG: 0, GBM: 0 },
@@ -616,7 +616,7 @@
                     'Deep Learning': { LGG: 0, GBM: 0 }
                 };
 
-                for (let i = 0; i < 21; i++) {
+                for (let i = 0; i < 15; i++) {
                     const predictions = {
                         'Random Forest': predictRandomForest(inputData),
                         'Logistic Regression': predictLogisticRegression(inputData),
