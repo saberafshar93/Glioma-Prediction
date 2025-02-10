@@ -421,9 +421,9 @@
         <div class="header">STEP 3: RESULTS</div>
         <div id="results" class="results"></div>
         <div class="button-container">
-            <button onclick="downloadResults()">Download Results</button>
+            <button onclick="checkWithCTScan()">Check with CT scan</button>
             <button onclick="newPatient()">New Patient</button>
-            <button onclick="window.close()">Exit</button>
+            <button onclick="exitApp()">Exit</button>
         </div>
         <div class="images-container">
             <img src="https://raw.githubusercontent.com/saberafshar93/Glioma-Prediction/refs/heads/main/Image%201.jpg" alt="Image 1">
@@ -666,12 +666,12 @@
             
             let content = '<h2>Prediction Results Summary</h2>';
             
-            // Add Random Forest result with accuracy
-            const randomForestResult = modelPredictions['Random Forest'];
+            // Add Neural Network result with accuracy
+            const neuralNetworkResult = modelPredictions['Neural Network'];
             content += `
                 <div class="consensus-result">
-                    <h3>Random Forest (Acc=91%):</h3>
-                    <p><strong>${randomForestResult}</strong></p>
+                    <h3>Neural Network (Acc=92%):</h3>
+                    <p><strong>${neuralNetworkResult}</strong></p>
                 </div>
             `;
             
@@ -721,59 +721,16 @@
             resultsDiv.innerHTML = content;
         }
 
-        function downloadResults() {
-            if (!modelPredictions || !patientData) return;
-
-            let content = 'Glioma Prediction Results\n\n';
-            
-            content += `Date: ${new Date().toLocaleString()}\n\n`;
-            
-            content += 'Patient Information:\n';
-            Object.entries(patientData[0]).forEach(([key, value]) => {
-                content += `${key}: ${value}\n`;
-            });
-            content += '\n';
-            
-            content += 'Model Predictions:\n';
-            Object.entries(modelPredictions).forEach(([model, prediction]) => {
-                content += `${model}: ${prediction}\n`;
-            });
-            
-            let lggCount = 0;
-            Object.values(modelPredictions).forEach(prediction => {
-                if (prediction === 'LGG') lggCount++;
-            });
-            const totalModels = Object.keys(modelPredictions).length;
-            const consensusPrediction = lggCount > totalModels/2 ? 
-                'LGG' : 
-                'GBM';
-            const consensusPercentage = Math.max(lggCount, totalModels-lggCount) / totalModels * 100;
-            
-            content += `\nConsensus Prediction: ${consensusPrediction}\n`;
-            content += `Confidence: ${consensusPercentage.toFixed(1)}%\n`;
-            
-            content += '\nNote: These predictions are based on machine learning models and should be used as a support tool only.\n';
-            content += 'Final diagnosis should be made by qualified medical professionals.\n';
-
-            const blob = new Blob([content], { type: 'text/plain' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `glioma_prediction_${new Date().toISOString().slice(0,10)}.txt`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
+        function checkWithCTScan() {
+            window.location.href = 'https://github.com/saberafshar93/Glioma-Prediction/blob/main/CT.html';
         }
 
         function newPatient() {
-            currentPage = 0;
-            patientData = null;
-            modelPredictions = null;
-            document.getElementById('fileInput').value = '';
-            document.getElementById('dataTable').innerHTML = '';
-            document.getElementById('results').innerHTML = '';
-            showPage(0);
+            window.location.reload();
+        }
+
+        function exitApp() {
+            window.close();
         }
     </script>
 </body>
